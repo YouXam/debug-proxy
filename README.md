@@ -1,6 +1,6 @@
 # Debug Proxy
 
-A high-performance HTTP debugging reverse proxy with timeout handling and subprocess management.
+A HTTP debugging reverse proxy with timeout handling and subprocess management.
 
 ## Features
 
