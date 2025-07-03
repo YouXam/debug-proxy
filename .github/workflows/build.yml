@@ -14,12 +14,19 @@ jobs:
       matrix:
         target: [x86_64-unknown-linux-musl]
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
             node-version: 22
             cache: 'npm'
             cache-dependency-path: ui/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: ui
+        run: npm ci
+      
+      - name: Build frontend
+        working-directory: ui
+        run: npm run build
       - name: Compile and release
         uses: YouXam/rust-build.action@v2
         env:

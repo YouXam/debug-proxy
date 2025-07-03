@@ -12,7 +12,20 @@ fn main() {
     
     // Check if ui directory exists
     if !Path::new(ui_dir).exists() {
-        println!("cargo:warning=UI directory not found, creating minimal fallback");
+        println!("cargo:warning=UI directory not found, skipping frontend build");
+        return;
+    }
+
+    // If ui/dist already exists, we can skip the build process
+    if Path::new(ui_dist_dir).exists() {
+        println!("cargo:warning=UI dist directory found, using existing assets");
+        return;
+    }
+
+    // Check if npm is available
+    if !is_npm_available() {
+        println!("cargo:warning=npm not found, skipping frontend build. Frontend will show fallback page.");
+        println!("cargo:warning=To build with frontend: install Node.js/npm and run 'cd ui && npm install && npm run build' before building");
         return;
     }
     
@@ -28,45 +41,38 @@ fn main() {
             Ok(output) => {
                 if !output.status.success() {
                     println!("cargo:warning=npm install failed: {}", String::from_utf8_lossy(&output.stderr));
+                    println!("cargo:warning=Continuing without frontend assets");
                     return;
                 }
             }
             Err(e) => {
                 println!("cargo:warning=Failed to run npm install: {}", e);
+                println!("cargo:warning=Continuing without frontend assets");
                 return;
             }
         }
     }
     
-    // Run npm run build if dist directory doesn't exist or is older than src
-    let should_build = if !Path::new(ui_dist_dir).exists() {
-        true
-    } else {
-        // Check if src is newer than dist
-        let src_modified = get_dir_modified_time("ui/src").unwrap_or(0);
-        let dist_modified = get_dir_modified_time(ui_dist_dir).unwrap_or(0);
-        src_modified > dist_modified
-    };
-    
-    if should_build {
-        println!("cargo:warning=Building frontend assets...");
-        let output = Command::new("npm")
-            .args(["run", "build"])
-            .current_dir(ui_dir)
-            .output();
-            
-        match output {
-            Ok(output) => {
-                if !output.status.success() {
-                    println!("cargo:warning=npm run build failed: {}", String::from_utf8_lossy(&output.stderr));
-                    return;
-                }
-                println!("cargo:warning=Frontend build completed successfully");
-            }
-            Err(e) => {
-                println!("cargo:warning=Failed to run npm run build: {}", e);
+    // Run npm run build
+    println!("cargo:warning=Building frontend assets...");
+    let output = Command::new("npm")
+        .args(["run", "build"])
+        .current_dir(ui_dir)
+        .output();
+        
+    match output {
+        Ok(output) => {
+            if !output.status.success() {
+                println!("cargo:warning=npm run build failed: {}", String::from_utf8_lossy(&output.stderr));
+                println!("cargo:warning=Continuing without frontend assets");
                 return;
             }
+            println!("cargo:warning=Frontend build completed successfully");
+        }
+        Err(e) => {
+            println!("cargo:warning=Failed to run npm run build: {}", e);
+            println!("cargo:warning=Continuing without frontend assets");
+            return;
         }
     }
     
@@ -76,31 +82,11 @@ fn main() {
     }
 }
 
-fn get_dir_modified_time(dir: &str) -> Option<u64> {
-    use std::fs;
-    
-    let mut latest = 0u64;
-    
-    if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            if let Ok(metadata) = entry.metadata() {
-                if let Ok(modified) = metadata.modified() {
-                    if let Ok(duration) = modified.duration_since(std::time::UNIX_EPOCH) {
-                        latest = latest.max(duration.as_secs());
-                    }
-                }
-            }
-            
-            // Recursively check subdirectories
-            if let Ok(metadata) = entry.metadata() {
-                if metadata.is_dir() {
-                    if let Some(sub_time) = get_dir_modified_time(&entry.path().to_string_lossy()) {
-                        latest = latest.max(sub_time);
-                    }
-                }
-            }
-        }
-    }
-    
-    if latest > 0 { Some(latest) } else { None }
+fn is_npm_available() -> bool {
+    Command::new("npm")
+        .args(["--version"])
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
 }
+
