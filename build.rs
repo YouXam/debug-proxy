@@ -49,7 +49,7 @@ fn main() {
                 }
             }
             Err(e) => {
-                println!("cargo:warning=Failed to run npm install: {}", e);
+                println!("cargo:warning=Failed to run npm install: {e}");
                 println!("cargo:warning=Continuing without frontend assets");
                 return;
             }
@@ -76,7 +76,7 @@ fn main() {
             println!("cargo:warning=Frontend build completed successfully");
         }
         Err(e) => {
-            println!("cargo:warning=Failed to run npm run build: {}", e);
+            println!("cargo:warning=Failed to run npm run build: {e}");
             println!("cargo:warning=Continuing without frontend assets");
             return;
         }
