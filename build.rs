@@ -20,7 +20,7 @@ fn main() {
     if !Path::new("ui/node_modules").exists() {
         println!("cargo:warning=Installing npm dependencies...");
         let output = Command::new("npm")
-            .args(&["install"])
+            .args(["install"])
             .current_dir(ui_dir)
             .output();
             
@@ -51,7 +51,7 @@ fn main() {
     if should_build {
         println!("cargo:warning=Building frontend assets...");
         let output = Command::new("npm")
-            .args(&["run", "build"])
+            .args(["run", "build"])
             .current_dir(ui_dir)
             .output();
             
