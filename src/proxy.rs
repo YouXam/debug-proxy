@@ -160,9 +160,9 @@ impl DebugProxy {
                 let response_bytes = match hyper::body::to_bytes(body).await {
                     Ok(bytes) => bytes.to_vec(),
                     Err(e) => {
-                        error!("Error reading response body: {}", e);
+                        error!("Error reading response body: {e}");
                         self.recorder
-                            .record_error(&request_id, format!("Error reading response: {}", e));
+                            .record_error(&request_id, format!("Error reading response: {e}"));
                         return Ok(Response::builder()
                             .status(StatusCode::BAD_GATEWAY)
                             .body(Body::from("Bad Gateway"))
@@ -207,7 +207,7 @@ impl DebugProxy {
             Ok(Err(e)) => {
                 error!("Upstream request failed: {}", e);
                 self.recorder
-                    .record_error(&request_id, format!("Upstream error: {}", e));
+                    .record_error(&request_id, format!("Upstream error: {e}"));
                 Ok(Response::builder()
                     .status(StatusCode::BAD_GATEWAY)
                     .body(Body::from("Bad Gateway"))
@@ -336,7 +336,7 @@ impl DebugProxy {
                     .unwrap())
             }
             Err(e) => {
-                let error_msg = format!("Invalid configuration: {}", e);
+                let error_msg = format!("Invalid configuration: {e}");
                 Ok(Response::builder()
                     .status(StatusCode::BAD_REQUEST)
                     .body(Body::from(error_msg))

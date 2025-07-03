@@ -199,7 +199,7 @@ impl RequestRecorder {
             if size == 0 {
                 String::new()
             } else {
-                format!("<binary data: {} bytes>", size)
+                format!("<binary data: {size} bytes>")
             }
         } else {
             let preview_bytes = if truncated {
@@ -210,7 +210,7 @@ impl RequestRecorder {
 
             match std::str::from_utf8(preview_bytes) {
                 Ok(s) => s.to_string(),
-                Err(_) => format!("<invalid UTF-8: {} bytes>", size),
+                Err(_) => format!("<invalid UTF-8: {size} bytes>"),
             }
         };
 
