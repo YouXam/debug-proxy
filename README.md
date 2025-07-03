@@ -13,6 +13,10 @@ A HTTP debugging reverse proxy with timeout handling and subprocess management.
 
 ## Installation
 
+### From Pre-built Binaries
+
+Download the latest release from the [GitHub Releases](https://github.com/YouXam/debug-proxy/releases) page.
+
 ### From Source
 
 ```bash
