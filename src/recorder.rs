@@ -1,10 +1,10 @@
+use http::{HeaderMap, Method, StatusCode, Version};
+use mime::Mime;
+use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::sync::Arc;
-use parking_lot::RwLock;
 use std::time::{SystemTime, UNIX_EPOCH};
-use http::{HeaderMap, Method, StatusCode, Version};
-use mime::Mime;
 
 pub struct RequestInfo<'a> {
     pub method: &'a Method,
@@ -86,14 +86,15 @@ impl RequestRecorder {
             .as_millis() as u64;
 
         let body_record = Self::analyze_body(info.body, info.headers, info.truncate_at);
-        
+
         let request = RequestRecord {
             id: id.clone(),
             timestamp,
             method: info.method.to_string(),
             path: info.path.to_string(),
             version: format!("{:?}", info.version),
-            headers: info.headers
+            headers: info
+                .headers
                 .iter()
                 .map(|(k, v)| (k.to_string(), v.to_str().unwrap_or("<invalid>").to_string()))
                 .collect(),
@@ -123,13 +124,14 @@ impl RequestRecorder {
             .as_millis() as u64;
 
         let body_record = Self::analyze_body(info.body, info.headers, info.truncate_at);
-        
+
         let response = ResponseRecord {
             id: info.request_id.to_string(),
             timestamp,
             status: info.status.as_u16(),
             version: format!("{:?}", info.version),
-            headers: info.headers
+            headers: info
+                .headers
                 .iter()
                 .map(|(k, v)| (k.to_string(), v.to_str().unwrap_or("<invalid>").to_string()))
                 .collect(),
@@ -148,10 +150,7 @@ impl RequestRecorder {
 
     pub fn record_error(&self, request_id: &str, error: String) {
         let mut transactions = self.transactions.write();
-        if let Some(transaction) = transactions
-            .iter_mut()
-            .find(|t| t.request.id == request_id)
-        {
+        if let Some(transaction) = transactions.iter_mut().find(|t| t.request.id == request_id) {
             transaction.error = Some(error);
         }
     }
@@ -195,7 +194,7 @@ impl RequestRecorder {
 
         let is_binary = Self::is_binary_content(body, content_type.as_deref());
         let truncated = size > truncate_at;
-        
+
         let preview = if is_binary {
             if size == 0 {
                 String::new()
@@ -208,7 +207,7 @@ impl RequestRecorder {
             } else {
                 body
             };
-            
+
             match std::str::from_utf8(preview_bytes) {
                 Ok(s) => s.to_string(),
                 Err(_) => format!("<invalid UTF-8: {} bytes>", size),
@@ -237,8 +236,12 @@ impl RequestRecorder {
                     (mime::APPLICATION, mime::JSON) => return false,
                     (mime::APPLICATION, mime::JAVASCRIPT) => return false,
                     (mime::APPLICATION, subtype) if subtype == "xml" => return false,
-                    (mime::APPLICATION, subtype) if subtype.as_str().ends_with("+json") => return false,
-                    (mime::APPLICATION, subtype) if subtype.as_str().ends_with("+xml") => return false,
+                    (mime::APPLICATION, subtype) if subtype.as_str().ends_with("+json") => {
+                        return false
+                    }
+                    (mime::APPLICATION, subtype) if subtype.as_str().ends_with("+xml") => {
+                        return false
+                    }
                     _ => {}
                 }
             }

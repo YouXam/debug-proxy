@@ -1,8 +1,8 @@
+use anyhow::{Context, Result};
+use parking_lot::Mutex;
 use std::process::{Child, Command, Stdio};
 use std::sync::Arc;
-use parking_lot::Mutex;
-use anyhow::{Context, Result};
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 #[derive(Clone)]
 pub struct ProcessManager {
@@ -20,7 +20,7 @@ impl ProcessManager {
 
     pub fn start(&self) -> Result<()> {
         let mut child_lock = self.child.lock();
-        
+
         if child_lock.is_some() {
             return Ok(()); // Already running
         }
@@ -30,9 +30,9 @@ impl ProcessManager {
         }
 
         info!("Starting command: {:?}", self.command);
-        
+
         let mut cmd = Command::new(&self.command[0]);
-        
+
         if self.command.len() > 1 {
             cmd.args(&self.command[1..]);
         }
@@ -49,26 +49,26 @@ impl ProcessManager {
 
         info!("Started upstream process with PID: {}", child.id());
         *child_lock = Some(child);
-        
+
         Ok(())
     }
 
     pub fn stop(&self) -> Result<()> {
         let mut child_lock = self.child.lock();
-        
+
         if let Some(mut child) = child_lock.take() {
             info!("Stopping upstream process with PID: {}", child.id());
-            
+
             #[cfg(unix)]
             {
                 // Try graceful shutdown first
                 unsafe {
                     libc::kill(child.id() as i32, libc::SIGTERM);
                 }
-                
+
                 // Wait a bit for graceful shutdown
                 std::thread::sleep(std::time::Duration::from_millis(100));
-                
+
                 match child.try_wait() {
                     Ok(Some(status)) => {
                         info!("Process exited gracefully with status: {}", status);
@@ -86,21 +86,21 @@ impl ProcessManager {
                     }
                 }
             }
-            
+
             #[cfg(windows)]
             {
                 let _ = child.kill();
             }
-            
+
             let _ = child.wait();
         }
-        
+
         Ok(())
     }
 
     pub fn is_running(&self) -> bool {
         let mut child_lock = self.child.lock();
-        
+
         if let Some(child) = child_lock.as_mut() {
             match child.try_wait() {
                 Ok(Some(_)) => {
@@ -151,7 +151,7 @@ extern "C" {
 mod libc {
     pub const SIGTERM: i32 = 15;
     pub const SIGKILL: i32 = 9;
-    
+
     pub unsafe fn kill(pid: i32, sig: i32) -> i32 {
         super::kill(pid, sig)
     }

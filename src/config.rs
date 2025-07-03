@@ -1,6 +1,6 @@
+use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use parking_lot::RwLock;
 use std::time::Duration;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,7 +47,7 @@ impl SharedConfig {
         self.inner.write()
     }
 
-    pub fn update<F>(&self, f: F) 
+    pub fn update<F>(&self, f: F)
     where
         F: FnOnce(&mut ProxyConfig),
     {

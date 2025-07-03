@@ -1,17 +1,17 @@
+use anyhow::{Context, Result};
 use clap::Parser;
 use std::process::exit;
-use anyhow::{Context, Result};
-use tracing::{info, error, warn};
+use tracing::{error, info, warn};
 
 mod config;
-mod recorder;
 mod process;
 mod proxy;
+mod recorder;
 
 use config::{ProxyConfig, SharedConfig};
-use recorder::RequestRecorder;
 use process::ProcessManager;
 use proxy::DebugProxy;
+use recorder::RequestRecorder;
 
 #[derive(Parser)]
 #[command(name = "debug-proxy")]
@@ -26,19 +26,37 @@ struct Args {
     #[arg(long, default_value = "0.0.0.0", help = "Host address to bind to")]
     host: String,
 
-    #[arg(short, long, default_value = "500", help = "Upstream timeout in milliseconds")]
+    #[arg(
+        short,
+        long,
+        default_value = "500",
+        help = "Upstream timeout in milliseconds"
+    )]
     upstream_timeout: u64,
 
-    #[arg(short, long, default_value = "30000", help = "Client timeout in milliseconds")]
+    #[arg(
+        short,
+        long,
+        default_value = "30000",
+        help = "Client timeout in milliseconds"
+    )]
     client_timeout: u64,
 
-    #[arg(short, long, default_value = "100", help = "Maximum number of requests to keep in history")]
+    #[arg(
+        short,
+        long,
+        default_value = "100",
+        help = "Maximum number of requests to keep in history"
+    )]
     max_history: usize,
 
     #[arg(long, default_value = "1024", help = "Body truncation size in bytes")]
     truncate_body: usize,
 
-    #[arg(last = true, help = "Command to run as upstream service (use -- before command)")]
+    #[arg(
+        last = true,
+        help = "Command to run as upstream service (use -- before command)"
+    )]
     command: Vec<String>,
 }
 
@@ -52,8 +70,9 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Parse upstream target
-    let upstream_addr = parse_upstream_target(&args.upstream)
-        .context("Invalid upstream target format. Use format: host:port (e.g., 192.168.1.1:3000)")?;
+    let upstream_addr = parse_upstream_target(&args.upstream).context(
+        "Invalid upstream target format. Use format: host:port (e.g., 192.168.1.1:3000)",
+    )?;
     let local_port = args.port;
 
     // Create configuration
@@ -64,7 +83,7 @@ async fn main() -> Result<()> {
         truncate_body_at: args.truncate_body,
         ..Default::default()
     };
-    
+
     let shared_config = SharedConfig::new(config);
     let access_token = shared_config.get_access_token();
 
@@ -96,8 +115,15 @@ async fn main() -> Result<()> {
     println!("  Body Truncation:  {} bytes", args.truncate_body);
     println!();
     println!("🌐 Web Interface:");
-    let web_host = if args.host == "0.0.0.0" { "localhost" } else { &args.host };
-    println!("  URL: http://{}:{}/_proxy?token={}", web_host, local_port, access_token);
+    let web_host = if args.host == "0.0.0.0" {
+        "localhost"
+    } else {
+        &args.host
+    };
+    println!(
+        "  URL: http://{}:{}/_proxy?token={}",
+        web_host, local_port, access_token
+    );
     println!();
     println!("🔧 Upstream Process:");
     if let Some(ref pm) = process_manager {
@@ -142,10 +168,12 @@ async fn main() -> Result<()> {
     });
 
     // Start the proxy server (non-blocking)
-    let host_addr: std::net::IpAddr = args.host.parse()
+    let host_addr: std::net::IpAddr = args
+        .host
+        .parse()
         .with_context(|| format!("Invalid host address: {}", args.host))?;
     let listen_addr = (host_addr, local_port).into();
-    
+
     // Start the proxy server and monitor for failures
     let server_handle = tokio::spawn(async move {
         if let Err(e) = proxy.start_server(listen_addr).await {
@@ -178,7 +206,7 @@ async fn main() -> Result<()> {
                 }
             }
         }
-        
+
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     }
 }
@@ -187,7 +215,9 @@ fn parse_upstream_target(target: &str) -> Result<String> {
     // Validate the format host:port
     let parts: Vec<&str> = target.split(':').collect();
     if parts.len() != 2 {
-        return Err(anyhow::anyhow!("Upstream target must be in format host:port"));
+        return Err(anyhow::anyhow!(
+            "Upstream target must be in format host:port"
+        ));
     }
 
     // Validate host part (not empty)
@@ -196,8 +226,7 @@ fn parse_upstream_target(target: &str) -> Result<String> {
     }
 
     // Validate port part
-    let _port = parts[1].parse::<u16>()
-        .context("Invalid port number")?;
+    let _port = parts[1].parse::<u16>().context("Invalid port number")?;
 
     Ok(target.to_string())
 }
@@ -208,9 +237,15 @@ mod tests {
 
     #[test]
     fn test_parse_upstream_target() {
-        assert_eq!(parse_upstream_target("localhost:3000").unwrap(), "localhost:3000");
-        assert_eq!(parse_upstream_target("192.168.1.1:8080").unwrap(), "192.168.1.1:8080");
-        
+        assert_eq!(
+            parse_upstream_target("localhost:3000").unwrap(),
+            "localhost:3000"
+        );
+        assert_eq!(
+            parse_upstream_target("192.168.1.1:8080").unwrap(),
+            "192.168.1.1:8080"
+        );
+
         assert!(parse_upstream_target("localhost").is_err());
         assert!(parse_upstream_target("localhost:3000:9000").is_err());
         assert!(parse_upstream_target(":3000").is_err());

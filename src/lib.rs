@@ -1,9 +1,12 @@
 pub mod config;
-pub mod recorder;
 pub mod process;
 pub mod proxy;
+pub mod recorder;
 
-pub use config::{ProxyConfig, SharedConfig, ConfigUpdate};
-pub use recorder::{RequestRecorder, HttpTransaction, RequestRecord, ResponseRecord, BodyRecord, RequestInfo, ResponseInfo};
+pub use config::{ConfigUpdate, ProxyConfig, SharedConfig};
 pub use process::ProcessManager;
 pub use proxy::DebugProxy;
+pub use recorder::{
+    BodyRecord, HttpTransaction, RequestInfo, RequestRecord, RequestRecorder, ResponseInfo,
+    ResponseRecord,
+};
