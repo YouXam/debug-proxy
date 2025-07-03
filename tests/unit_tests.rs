@@ -178,7 +178,7 @@ fn test_request_recorder_circular_buffer() {
     for i in 0..3 {
         let request_info = RequestInfo {
             method: &Method::GET,
-            path: &format!("/test{}", i),
+            path: &format!("/test{i}"),
             version: Version::HTTP_11,
             headers: &headers,
             body: b"body",
@@ -204,7 +204,7 @@ fn test_request_recorder_resize() {
     for i in 0..5 {
         let request_info = RequestInfo {
             method: &Method::GET,
-            path: &format!("/test{}", i),
+            path: &format!("/test{i}"),
             version: Version::HTTP_11,
             headers: &headers,
             body: b"body",

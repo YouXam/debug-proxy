@@ -107,8 +107,8 @@ async fn main() -> Result<()> {
     println!("🚀 DebugProxy started successfully!");
     println!();
     println!("📊 Proxy Configuration:");
-    println!("  Listen Address:   {}:{}", args.host, local_port);
-    println!("  Upstream Target:  {}", upstream_addr);
+    println!("  Listen Address:   {}:{local_port}", args.host);
+    println!("  Upstream Target:  {upstream_addr}");
     println!("  Client Timeout:   {}ms", args.client_timeout);
     println!("  Upstream Timeout: {}ms", args.upstream_timeout);
     println!("  Max History:      {} requests", args.max_history);
@@ -120,15 +120,12 @@ async fn main() -> Result<()> {
     } else {
         &args.host
     };
-    println!(
-        "  URL: http://{}:{}/_proxy?token={}",
-        web_host, local_port, access_token
-    );
+    println!("  URL: http://{web_host}:{local_port}/_proxy?token={access_token}",);
     println!();
     println!("🔧 Upstream Process:");
     if let Some(ref pm) = process_manager {
         if let Some(pid) = pm.get_pid() {
-            println!("  Status: PID {} (running)", pid);
+            println!("  Status: PID {pid} (running)");
         } else {
             println!("  Status: Not running");
         }

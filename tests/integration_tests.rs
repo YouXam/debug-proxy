@@ -176,8 +176,7 @@ async fn test_configuration_updates() {
 
     let response = client
         .post(format!(
-            "http://localhost:8084/_proxy/api/config?token={}",
-            token
+            "http://localhost:8084/_proxy/api/config?token={token}",
         ))
         .json(&update_payload)
         .send()
@@ -210,7 +209,7 @@ async fn start_test_server(port: u16) -> tokio::task::JoinHandle<()> {
         let server = Server::bind(&addr).serve(make_svc);
 
         if let Err(e) = server.await {
-            eprintln!("Test server error: {}", e);
+            eprintln!("Test server error: {e}");
         }
     })
 }
@@ -238,7 +237,7 @@ async fn start_slow_test_server(port: u16, delay: Duration) -> tokio::task::Join
         let server = Server::bind(&addr).serve(make_svc);
 
         if let Err(e) = server.await {
-            eprintln!("Slow test server error: {}", e);
+            eprintln!("Slow test server error: {e}");
         }
     })
 }
@@ -247,7 +246,7 @@ async fn start_proxy_server(proxy: DebugProxy, port: u16) -> tokio::task::JoinHa
     tokio::spawn(async move {
         let addr = ([127, 0, 0, 1], port).into();
         if let Err(e) = proxy.start_server(addr).await {
-            eprintln!("Proxy server error: {}", e);
+            eprintln!("Proxy server error: {e}");
         }
     })
 }
